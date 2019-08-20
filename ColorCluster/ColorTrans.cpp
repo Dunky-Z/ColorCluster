@@ -1,7 +1,5 @@
 #include "ColorTrans.h"
 
-
-
 ColorTrans::ColorTrans()
 {
 }
