@@ -13,8 +13,9 @@ bool cmp(const Vec3f & x, const Vec3f & y)
 		return x.val[2] > y.val[2];
 }
 
-void ColorTrans::CalculateCenters(Mat & src,int nClusters,Mat labels,Mat centers, Vec3f *centersRGB)
+void ColorTrans::CalculateCenters(Mat & src, int nClusters, Mat& labels, Mat& centers, Vec3f *centersRGB)
 {
+
 	if (!src.data)
 	{
 		return;
@@ -26,7 +27,6 @@ void ColorTrans::CalculateCenters(Mat & src,int nClusters,Mat labels,Mat centers
 
 	int nRows = src.rows;
 	int nCols = src.cols;
-	//设定类数，提取NCluster种颜色
 
 	//输入样本 按行存储
 	Mat samples(nRows*nCols, 1, CV_32FC3);
@@ -42,13 +42,12 @@ void ColorTrans::CalculateCenters(Mat & src,int nClusters,Mat labels,Mat centers
 		}
 	}
 
-	TermCriteria  criteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 1000, FLT_EPSILON);
+	TermCriteria  criteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 100, FLT_EPSILON);
 
 	//进行聚类
 	kmeans(samples, nClusters, labels, criteria, 1, KMEANS_PP_CENTERS, centers);
 
 	//每个类别的颜色中心
-	
 	cout << "颜色聚类中心" << endl;
 	for (int i = 0; i < nClusters; ++i)
 	{
@@ -57,7 +56,7 @@ void ColorTrans::CalculateCenters(Mat & src,int nClusters,Mat labels,Mat centers
 }
 
 
-void ColorTrans::ColorCluster(Mat& src,int nClusters, Mat labels, Vec3f * centersRGB )
+void ColorTrans::ColorCluster(Mat& src, int nClusters, Mat& labels, Vec3f * centersRGB)
 {
 	int nRows = src.rows;
 	int nCols = src.cols;
@@ -141,5 +140,64 @@ void ColorTrans::ColorCluster(Mat& src,int nClusters, Mat labels, Vec3f * center
 		cout << precent[i] << " ";
 	}
 	cout << endl;
-	waitKey(0);
+}
+
+vector<vector<int>> ColorTrans::CalculateMinDistance(Mat& src, int nClusters, Vec3f* centersRGB)
+{
+
+	int nRows = src.rows;
+	int nCols = src.cols;
+	vector<vector<int>> label(nRows, vector<int>(nCols, 0));
+
+	int l;
+
+	for (int i = 0; i < nRows; ++i)
+	{
+		for (int j = 0; j < nCols; ++j)
+		{
+			Vec3f p;
+			p.val[0] = src.at<Vec3b>(i, j)[0];
+			p.val[1] = src.at<Vec3b>(i, j)[1];
+			p.val[2] = src.at<Vec3b>(i, j)[2];
+			double minDis = DBL_MAX;
+			for (int k = 0; k < nClusters; ++k)
+			{
+				Vec3f pp = centersRGB[k];
+				double t = CalculateNorm(p, pp);
+				if (t < minDis)
+				{
+					minDis = t;
+					l = k;
+				}
+			}
+			label[i][j] = l;
+			//cout << label[i][j] << " ";
+		}
+		//cout << endl;
+	}
+	return label;
+}
+
+void ColorTrans::ChangeColor(Mat& dst, int nClusters, vector<vector<int>>& label_src, vector<vector<int>>& label_dst, Vec3f* centersRGB)
+{
+	int nRows = dst.rows;
+	int nCols = dst.cols;
+	int index = 2;
+	for (int i = 0; i < nRows; ++i)
+	{
+		for (int j = 0; j < nCols; ++j)
+		{
+			for (int k = 0; k < nClusters; ++k)
+			{
+				if (label_dst[i][j] == k)
+				{
+					dst.at<Vec3b>(i, j)[0] = centersRGB[(k + index) % 10].val[0];
+					dst.at<Vec3b>(i, j)[1] = centersRGB[(k + index) % 10].val[1];
+					dst.at<Vec3b>(i, j)[2] = centersRGB[(k + index) % 10].val[2];
+				}
+			}
+		}
+	}
+	namedWindow("替换后", CV_WINDOW_NORMAL);
+	imshow("替换后", dst);
 }
