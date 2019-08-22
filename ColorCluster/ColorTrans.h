@@ -14,16 +14,18 @@ using namespace cv;
 class ColorTrans
 {
 public:
+	const int nClusters = 8;	//设置提取颜色数
+
 	ColorTrans();
 	virtual ~ColorTrans() = default;
-	void CalculateCenters(Mat& src, int nClusters, Mat& labels, Mat& centers, Vec3f *centersRGB);
-	void ColorCluster(Mat& src, int nClusters, Mat& labels, Vec3f *centersRGB);
-	vector<vector<int>> CalculateMinDistance(Mat& src, int nClusters, Vec3f* centersRGB);
-	void ChangeColor(Mat& dst, int nClusters, vector<vector<int>>& label_src, vector<vector<int>>& label_dst, Vec3f* centersRGB);
-
+	void Test();
+	void CalculateCenters(Mat& src, Mat& labels, Mat& centers, Vec3f *centersRGB);
+	void ColorCluster(Mat& src, Mat& labels, const Vec3f *centersRGB);
+	vector<vector<int>> CalculateMinDistance(const Mat& src, const Vec3f* centersRGB);
+	void ChangeColorSelf(Mat& dst, const vector<vector<int>>& label_dst, const Vec3f* centersRGB);
 
 public:
-	double CalculateNorm(Vec3f p1, Vec3f p2)
+	double CalculateNorm(const Vec3f p1, const Vec3f p2)
 	{
 		double distance = sqrt((p1.val[0] - p2.val[0])*(p1.val[0] - p2.val[0]) + (p1.val[1] - p2.val[1])*(p1.val[1] - p2.val[1]) + (p1.val[2] - p2.val[2])*(p1.val[2] - p2.val[2]));
 		return distance;
